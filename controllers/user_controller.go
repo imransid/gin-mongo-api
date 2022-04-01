@@ -1,6 +1,9 @@
 package controllers
 
+//     "fmt"
+
 import (
+
     "context"
     "gin-mongo-api/configs"
     "gin-mongo-api/models"
@@ -12,10 +15,24 @@ import (
     "github.com/go-playground/validator/v10"
     "go.mongodb.org/mongo-driver/bson/primitive"
     "go.mongodb.org/mongo-driver/mongo"
+    "golang.org/x/crypto/bcrypt"
 )
 
 var userCollection *mongo.Collection = configs.GetCollection(configs.DB, "users")
 var validate = validator.New()
+
+
+func HashPassword(password string) (string, error) {
+    bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+    return string(bytes), err
+}
+
+func CheckPasswordHash(password, hash string) bool {
+    err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+    return err == nil
+}
+
+
 
 func CreateUser() gin.HandlerFunc {
     return func(c *gin.Context) {
@@ -23,7 +40,7 @@ func CreateUser() gin.HandlerFunc {
         var user models.User
         defer cancel()
 
-        //validate the request body
+       // //validate the request body
         if err := c.BindJSON(&user); err != nil {
             c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
             return
@@ -35,12 +52,29 @@ func CreateUser() gin.HandlerFunc {
             return
         }
 
+
+        hash, _ := HashPassword(user.Password) // ignore error for the sake of simplicity
+
         newUser := models.User{
             Id:       primitive.NewObjectID(),
             Name:     user.Name,
             Location: user.Location,
             Title:    user.Title,
+            Email:    user.Email,
+            Password: hash,
         }
+
+
+        // fmt.Println("Password:", user.Password)
+        // fmt.Println("Hash:    ", hash)
+
+        // match := CheckPasswordHash(user.Password, hash)
+        // fmt.Println("Match:   ", match)
+
+
+       
+
+
       
         result, err := userCollection.InsertOne(ctx, newUser)
         if err != nil {
@@ -48,7 +82,7 @@ func CreateUser() gin.HandlerFunc {
             return
         }
 
-        c.JSON(http.StatusCreated, responses.UserResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": result}})
+         c.JSON(http.StatusCreated, responses.UserResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": result}})
     }
 }
 
