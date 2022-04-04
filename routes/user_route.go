@@ -12,3 +12,9 @@ func UserRoute(router *gin.Engine)  {
     router.DELETE("/user/:userId", controllers.DeleteAUser()) //add this
     router.GET("/users", controllers.GetAllUsers())
 }
+
+
+
+func AuthRoute(router *gin.Engine)  {
+    router.POST("/authentication", controllers.Authentication())
+}

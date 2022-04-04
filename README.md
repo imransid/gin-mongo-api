@@ -29,3 +29,15 @@ github.com/go-playground/validator/v10 is a library for validating structs and f
 https://gowebexamples.com/password-hashing/
 
 "golang.org/x/crypto/bcrypt"
+
+# access token 3:)
+
+https://dev.to/joojodontoh/build-user-authentication-in-golang-with-jwt-and-mongodb-2igd
+
+# best 3 architecture for GoLang
+
+- Generic repository pattern (centralizes a common repository for database operations)
+- Onion architecture (segregates a monolith project into controller layer, buisness layer, data access layer, domain/entity layer)
+- Hexagonal architecture
+
+## reflect.TypeOF() to get type

@@ -4,6 +4,7 @@ import (
     "gin-mongo-api/configs"
     "gin-mongo-api/routes" //add this
     "github.com/gin-gonic/gin"
+   
 )
 
 func main() {
@@ -14,6 +15,8 @@ func main() {
 
     //routes
     routes.UserRoute(router) //add this
+    routes.AuthRoute(router) //add this
+    
 
     router.Run("localhost:6000")
 }

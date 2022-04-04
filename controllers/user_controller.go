@@ -3,7 +3,6 @@ package controllers
 //     "fmt"
 
 import (
-
     "context"
     "gin-mongo-api/configs"
     "gin-mongo-api/models"
@@ -25,11 +24,6 @@ var validate = validator.New()
 func HashPassword(password string) (string, error) {
     bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
     return string(bytes), err
-}
-
-func CheckPasswordHash(password, hash string) bool {
-    err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-    return err == nil
 }
 
 
@@ -62,18 +56,9 @@ func CreateUser() gin.HandlerFunc {
             Title:    user.Title,
             Email:    user.Email,
             Password: hash,
-        }
-
-
-        // fmt.Println("Password:", user.Password)
-        // fmt.Println("Hash:    ", hash)
-
-        // match := CheckPasswordHash(user.Password, hash)
-        // fmt.Println("Match:   ", match)
-
-
-       
-
+            Role :    user.Role,
+            Phone:    user.Phone,
+        }  
 
       
         result, err := userCollection.InsertOne(ctx, newUser)
@@ -204,3 +189,6 @@ func GetAllUsers() gin.HandlerFunc {
         )
     }
 }
+
+     
+ 
