@@ -3,6 +3,8 @@ package controllers
 //     "fmt"
 
 import (
+    "log"
+    "fmt"
     "context"
     "gin-mongo-api/configs"
     "gin-mongo-api/models"
@@ -15,6 +17,7 @@ import (
     "go.mongodb.org/mongo-driver/bson/primitive"
     "go.mongodb.org/mongo-driver/mongo"
     "golang.org/x/crypto/bcrypt"
+    helper "gin-mongo-api/helpers"
 )
 
 var userCollection *mongo.Collection = configs.GetCollection(configs.DB, "users")
@@ -47,10 +50,34 @@ func CreateUser() gin.HandlerFunc {
         }
 
 
+        // check email exists 
+
+        count, err := userCollection.CountDocuments(ctx, bson.M{"email" : user.Email})
+
+        if err != nil {
+            log.Panic(err)
+            c.JSON(http.StatusInternalServerError, gin.H{"error" : "error ocurred while checking email"})
+        }
+
+        if count > 0 {
+            c.JSON(http.StatusInternalServerError, gin.H{"error" : "Email or User already exits! "})
+            return
+        }
+
+
+        user_id := primitive.NewObjectID()
+
+
         hash, _ := HashPassword(user.Password) // ignore error for the sake of simplicity
+        time_at , _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+
+
+        token, refreshToken , _ := helper.GenerateAllTokens(user.Email, user.Name, user_id, user.Role)
+
+        
 
         newUser := models.User{
-            Id:       primitive.NewObjectID(),
+            Id:       user_id,
             Name:     user.Name,
             Location: user.Location,
             Title:    user.Title,
@@ -58,10 +85,18 @@ func CreateUser() gin.HandlerFunc {
             Password: hash,
             Role :    user.Role,
             Phone:    user.Phone,
+            Created_at : time_at,
+            Updated_at : time_at,
+            Token : token,
+            Refresh_token : refreshToken,  
+            FirstName : user.FirstName,
+            LastName : user.LastName,
         }  
 
       
         result, err := userCollection.InsertOne(ctx, newUser)
+
+
         if err != nil {
             c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
             return
@@ -74,8 +109,18 @@ func CreateUser() gin.HandlerFunc {
 
 func GetAUser() gin.HandlerFunc {
     return func(c *gin.Context) {
-        ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
         userId := c.Param("userId")
+
+
+fmt.Println(time.Parse(time.RFC3339, time.Now().Format(time.RFC3339)))
+
+        if err := helper.MatchUserTypeToUid(c, userId); err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error" : err.Error()})
+        }
+
+
+        ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
         var user models.User
         defer cancel()
 
@@ -162,7 +207,16 @@ func DeleteAUser() gin.HandlerFunc {
 
 func GetAllUsers() gin.HandlerFunc {
     return func(c *gin.Context) {
+
+
+
+
+
+
+
         ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+         
         var users []models.User
         defer cancel()
 
